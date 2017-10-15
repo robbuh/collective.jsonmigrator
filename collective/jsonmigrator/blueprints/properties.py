@@ -68,9 +68,9 @@ class Properties(object):
 
                 try:
                     if obj.hasProperty(pid):
-                        obj._updateProperty(pid, pvalue)
+                        obj._updateProperty(pid, safe_unicode(pvalue)).encode('utf-8')
                     else:
-                        obj._setProperty(pid, pvalue, ptype)
+                        obj._setProperty(pid, safe_unicode(pvalue).encode('utf-8'), ptype)
                 except ConflictError:
                     raise
                 except Exception as e:

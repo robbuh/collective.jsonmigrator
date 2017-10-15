@@ -68,7 +68,8 @@ class Properties(object):
 
                 try:
                     if obj.hasProperty(pid):
-                        obj._updateProperty(pid, safe_unicode(pvalue)).encode('utf-8')
+                        from ipdb import set_trace; set_trace()
+                        obj._updateProperty(pid, safe_unicode(pvalue).encode('utf-8'))
                     else:
                         obj._setProperty(pid, safe_unicode(pvalue).encode('utf-8'), ptype)
                 except ConflictError:

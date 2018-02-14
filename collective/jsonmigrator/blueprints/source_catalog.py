@@ -29,21 +29,22 @@ class CatalogSourceSection(object):
         self.options = options
         self.context = transmogrifier.context
 
-        self.remote_url = self.get_option('remote-url',
+        self.remote_url = self.get_option('remote_url',
                                           'http://localhost:8080')
-        remote_username = self.get_option('remote-username', 'admin')
-        remote_password = self.get_option('remote-password', 'admin')
+        remote_username = self.get_option('remote_username', 'admin')
+        remote_password = self.get_option('remote_password', 'admin')
 
-        catalog_path = self.get_option('catalog-path', '/Plone/portal_catalog')
+        catalog_path = self.get_option('catalog_path', '/Plone/portal_catalog')
         self.site_path_length = len('/'.join(catalog_path.split('/')[:-1]))
 
-        catalog_query = self.get_option('catalog-query', None)
+        catalog_query = self.get_option('catalog_query', None)
         catalog_query = ' '.join(catalog_query.split())
         catalog_query = base64.b64encode(catalog_query)
 
-        self.remote_skip_paths = self.get_option('remote-skip-paths',
+        self.remote_skip_paths = self.get_option('remote_skip_paths',
                                                  '').split()
-        self.queue_length = int(self.get_option('queue-size', '10'))
+        self.queue_length = int(self.get_option('queue_size', '10'))
+
 
         # Install a basic auth handler
         auth_handler = urllib2.HTTPBasicAuthHandler()
@@ -54,11 +55,13 @@ class CatalogSourceSection(object):
         opener = urllib2.build_opener(auth_handler)
         urllib2.install_opener(opener)
 
+
         req = urllib2.Request(
             '%s%s/get_catalog_results' %
             (self.remote_url, catalog_path), urllib.urlencode(
                 {
                     'catalog_query': catalog_query}))
+
         try:
             f = urllib2.urlopen(req)
             resp = f.read()

@@ -52,6 +52,7 @@ class Properties(object):
             path = safe_unicode(item[pathkey].lstrip('/')).encode('ascii')
             obj = traverse(self.context, path, None)
 
+
             if obj is None:
                 # path doesn't exist
                 yield item
@@ -66,6 +67,10 @@ class Properties(object):
                     # if object have a attribute equal to property, do nothing
                     continue
 
+                # Bugfix > plone default_page must be a string, got (<type 'unicode'>)
+                if pid == 'default_page':
+                  pvalue = str(pvalue)
+
                 try:
                     if obj.hasProperty(pid):
                         obj._updateProperty(pid, pvalue)
@@ -77,5 +82,8 @@ class Properties(object):
                     raise Exception('Failed to set property "%s" type "%s"'
                                     ' to "%s" at object %s. ERROR: %s' %
                                     (pid, ptype, pvalue, str(obj), str(e)))
+
+            #import pdb
+            #pdb.set_trace()
 
             yield item

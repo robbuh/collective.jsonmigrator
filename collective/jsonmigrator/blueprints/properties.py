@@ -58,9 +58,11 @@ class Properties(object):
                 yield item
                 continue
 
+
             if not getattr(aq_base(obj), '_setProperty', False):
                 yield item
                 continue
+
 
             for pid, pvalue, ptype in item[propertieskey]:
                 if getattr(aq_base(obj), pid, None) is not None:
@@ -70,6 +72,10 @@ class Properties(object):
                 # Bugfix > plone default_page must be a string, got (<type 'unicode'>)
                 if pid == 'default_page':
                   pvalue = str(pvalue)
+
+                # Bugfix > Set exclude_from_nav (Plone 5) if excludeFromNav (Plone 4) is True
+                if item['excludeFromNav'] == True:
+                  obj.exclude_from_nav = True
 
                 try:
                     if obj.hasProperty(pid):
@@ -82,6 +88,5 @@ class Properties(object):
                     raise Exception('Failed to set property "%s" type "%s"'
                                     ' to "%s" at object %s. ERROR: %s' %
                                     (pid, ptype, pvalue, str(obj), str(e)))
-
 
             yield item

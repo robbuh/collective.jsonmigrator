@@ -83,7 +83,5 @@ class Properties(object):
                                     ' to "%s" at object %s. ERROR: %s' %
                                     (pid, ptype, pvalue, str(obj), str(e)))
 
-            #import pdb
-            #pdb.set_trace()
 
             yield item

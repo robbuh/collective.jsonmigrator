@@ -68,7 +68,9 @@ class CatalogSourceSection(object):
         except urllib2.URLError:
             raise
 
-        self.item_paths = sorted(json.loads(resp))
+        # Stop alphabetical oder
+        #self.item_paths = sorted(json.loads(resp))
+        self.item_paths = json.loads(resp)
 
     def get_option(self, name, default):
         """Get an option from the request if available and fallback to the

@@ -43,15 +43,13 @@ class CatalogSourceSection(object):
         # Rebuild folder and subfolder tree.
         # Avoid obj creation in non existing folder > /site/folder does not exist for item /site/folder/file
         catalog_query_dict = ast.literal_eval(catalog_query)
-        depth = catalog_query_dict['path']['depth']
-        i = 0
+        depth = int(catalog_query_dict['path']['depth'])
+
         values = []
 
-        while i <= depth:
+        for i in range(depth):
 
-            i += 1
-
-            catalog_query_dict['path']['depth'] = i
+            catalog_query_dict['path']['depth'] = i+1
 
             catalog_query = ' '.join(str(catalog_query_dict).split())
             catalog_query = base64.b64encode(catalog_query)
@@ -76,14 +74,19 @@ class CatalogSourceSection(object):
                     {
                         'catalog_query': catalog_query}))
 
-
             try:
                 f = urllib2.urlopen(req)
                 resp = f.read()
             except urllib2.URLError:
                 raise
 
+            # Delete parent values on the > 1 catalog query
+            if i > 0:
+              for x in values:
+                  resp = resp.replace('"'+x+'", ', '')
+
             values += json.loads(resp)
+
 
         # Stop alphabetical oder
         #self.item_paths = sorted(json.loads(resp))

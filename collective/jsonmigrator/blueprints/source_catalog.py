@@ -39,7 +39,9 @@ class CatalogSourceSection(object):
 
         catalog_query = self.get_option('catalog_query', None)
 
-        # Build folder and subfolder tree ---------------------
+        # Bugfix
+        # Rebuild folder and subfolder tree.
+        # Avoid obj creation in non existing folder > /site/folder does not exist for item /site/folder/file
         catalog_query_dict = ast.literal_eval(catalog_query)
         depth = catalog_query_dict['path']['depth']
         i = 0

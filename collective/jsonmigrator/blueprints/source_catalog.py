@@ -76,8 +76,6 @@ class CatalogSourceSection(object):
                     {
                         'catalog_query': catalog_query}))
 
-            import pdb
-            pdb.set_trace()
 
             try:
                 f = urllib2.urlopen(req)
@@ -85,10 +83,10 @@ class CatalogSourceSection(object):
             except urllib2.URLError:
                 raise
 
-            # Stop alphabetical oder
-            #self.item_paths = sorted(json.loads(resp))
             values += json.loads(resp)
 
+        # Stop alphabetical oder
+        #self.item_paths = sorted(json.loads(resp))
         self.item_paths = values
 
 

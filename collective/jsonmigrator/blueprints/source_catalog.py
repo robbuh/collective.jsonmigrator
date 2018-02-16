@@ -9,6 +9,7 @@ import threading
 import time
 import urllib
 import urllib2
+import ast
 
 try:
     import json
@@ -29,8 +30,7 @@ class CatalogSourceSection(object):
         self.options = options
         self.context = transmogrifier.context
 
-        self.remote_url = self.get_option('remote_url',
-                                          'http://localhost:8080')
+        self.remote_url = self.get_option('remote_url', 'http://localhost:8080')
         remote_username = self.get_option('remote_username', 'admin')
         remote_password = self.get_option('remote_password', 'admin')
 
@@ -38,39 +38,57 @@ class CatalogSourceSection(object):
         self.site_path_length = len('/'.join(catalog_path.split('/')[:-1]))
 
         catalog_query = self.get_option('catalog_query', None)
-        catalog_query = ' '.join(catalog_query.split())
-        catalog_query = base64.b64encode(catalog_query)
 
-        self.remote_skip_paths = self.get_option('remote_skip_paths',
-                                                 '').split()
-        self.queue_length = int(self.get_option('queue_size', '10'))
+        # Build folder and subfolder tree ---------------------
+        catalog_query_dict = ast.literal_eval(catalog_query)
+        depth = catalog_query_dict['path']['depth']
+        i = 0
+        values = []
+
+        while i <= depth:
+
+            i += 1
+
+            catalog_query_dict['path']['depth'] = i
+
+            catalog_query = ' '.join(str(catalog_query_dict).split())
+            catalog_query = base64.b64encode(catalog_query)
+
+            self.remote_skip_paths = self.get_option('remote_skip_paths',
+                                                     '').split()
+            self.queue_length = int(self.get_option('queue_size', '10'))
 
 
-        # Install a basic auth handler
-        auth_handler = urllib2.HTTPBasicAuthHandler()
-        auth_handler.add_password(realm='Zope',
-                                  uri=self.remote_url,
-                                  user=remote_username,
-                                  passwd=remote_password)
-        opener = urllib2.build_opener(auth_handler)
-        urllib2.install_opener(opener)
+            # Install a basic auth handler
+            auth_handler = urllib2.HTTPBasicAuthHandler()
+            auth_handler.add_password(realm='Zope',
+                                      uri=self.remote_url,
+                                      user=remote_username,
+                                      passwd=remote_password)
+            opener = urllib2.build_opener(auth_handler)
+            urllib2.install_opener(opener)
 
+            req = urllib2.Request(
+                '%s%s/get_catalog_results' %
+                (self.remote_url, catalog_path), urllib.urlencode(
+                    {
+                        'catalog_query': catalog_query}))
 
-        req = urllib2.Request(
-            '%s%s/get_catalog_results' %
-            (self.remote_url, catalog_path), urllib.urlencode(
-                {
-                    'catalog_query': catalog_query}))
+            import pdb
+            pdb.set_trace()
 
-        try:
-            f = urllib2.urlopen(req)
-            resp = f.read()
-        except urllib2.URLError:
-            raise
+            try:
+                f = urllib2.urlopen(req)
+                resp = f.read()
+            except urllib2.URLError:
+                raise
 
-        # Stop alphabetical oder
-        #self.item_paths = sorted(json.loads(resp))
-        self.item_paths = json.loads(resp)
+            # Stop alphabetical oder
+            #self.item_paths = sorted(json.loads(resp))
+            values += json.loads(resp)
+
+        self.item_paths = values
+
 
     def get_option(self, name, default):
         """Get an option from the request if available and fallback to the

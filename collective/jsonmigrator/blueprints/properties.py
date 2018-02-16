@@ -63,6 +63,10 @@ class Properties(object):
                 yield item
                 continue
 
+            # Bugfix > Set exclude_from_nav (Plone 5) if excludeFromNav (Plone 4) is True
+            if item['excludeFromNav']:
+                obj.exclude_from_nav = True
+
 
             for pid, pvalue, ptype in item[propertieskey]:
                 if getattr(aq_base(obj), pid, None) is not None:
@@ -71,11 +75,7 @@ class Properties(object):
 
                 # Bugfix > plone default_page must be a string, got (<type 'unicode'>)
                 if pid == 'default_page':
-                  pvalue = str(pvalue)
-
-                # Bugfix > Set exclude_from_nav (Plone 5) if excludeFromNav (Plone 4) is True
-                if item['excludeFromNav'] == True:
-                  obj.exclude_from_nav = True
+                    pvalue = str(pvalue)
 
                 try:
                     if obj.hasProperty(pid):

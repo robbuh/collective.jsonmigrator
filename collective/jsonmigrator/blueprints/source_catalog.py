@@ -30,7 +30,8 @@ class CatalogSourceSection(object):
         self.options = options
         self.context = transmogrifier.context
 
-        self.remote_url = self.get_option('remote_url', 'http://localhost:8080')
+        self.remote_url = self.get_option('remote_url',
+                                          'http://localhost:8080')
         remote_username = self.get_option('remote_username', 'admin')
         remote_password = self.get_option('remote_password', 'admin')
 
@@ -38,60 +39,46 @@ class CatalogSourceSection(object):
         self.site_path_length = len('/'.join(catalog_path.split('/')[:-1]))
 
         catalog_query = self.get_option('catalog_query', None)
+        catalog_query = ' '.join(catalog_query.split())
+        catalog_query = base64.b64encode(catalog_query)
+
+        self.remote_skip_paths = self.get_option('remote_skip_paths',
+                                                 '').split()
+        self.queue_length = int(self.get_option('queue_size', '10'))
+
+
+        # Install a basic auth handler
+        auth_handler = urllib2.HTTPBasicAuthHandler()
+        auth_handler.add_password(realm='Zope',
+                                  uri=self.remote_url,
+                                  user=remote_username,
+                                  passwd=remote_password)
+        opener = urllib2.build_opener(auth_handler)
+        urllib2.install_opener(opener)
+
+
+        req = urllib2.Request(
+            '%s%s/get_catalog_results' %
+            (self.remote_url, catalog_path), urllib.urlencode(
+                {
+                    'catalog_query': catalog_query}))
+
+        try:
+            f = urllib2.urlopen(req)
+            resp = f.read()
+        except urllib2.URLError:
+            raise
 
         # Bugfix
-        # Rebuild folder and subfolder tree.
-        # Avoid obj creation in non existing folder > /site/folder does not exist for item /site/folder/file
-        catalog_query_dict = ast.literal_eval(catalog_query)
-        depth = int(catalog_query_dict['path']['depth'])
-
-        values = []
-
-        for i in range(depth):
-
-            catalog_query_dict['path']['depth'] = i+1
-
-            catalog_query = ' '.join(str(catalog_query_dict).split())
-            catalog_query = base64.b64encode(catalog_query)
-
-            self.remote_skip_paths = self.get_option('remote_skip_paths',
-                                                     '').split()
-            self.queue_length = int(self.get_option('queue_size', '10'))
-
-
-            # Install a basic auth handler
-            auth_handler = urllib2.HTTPBasicAuthHandler()
-            auth_handler.add_password(realm='Zope',
-                                      uri=self.remote_url,
-                                      user=remote_username,
-                                      passwd=remote_password)
-            opener = urllib2.build_opener(auth_handler)
-            urllib2.install_opener(opener)
-
-            req = urllib2.Request(
-                '%s%s/get_catalog_results' %
-                (self.remote_url, catalog_path), urllib.urlencode(
-                    {
-                        'catalog_query': catalog_query}))
-
-            try:
-                f = urllib2.urlopen(req)
-                resp = f.read()
-            except urllib2.URLError:
-                raise
-
-            # Delete parent values on the > 1 catalog query
-            if i > 0:
-              for x in values:
-                  resp = resp.replace('"'+x+'", ', '')
-
-            values += json.loads(resp)
-
+        # Rebuild folder and subfolder tree. Avoid obj creation in non existing folder > /site/folder does not exist for item /site/folder/file
+        # Order based on "/" count
+        resp = ast.literal_eval(resp)
+        resp = sorted(resp, key=lambda x:x.count('/'))
+        resp = json.dumps(resp)
 
         # Stop alphabetical oder
         #self.item_paths = sorted(json.loads(resp))
-        self.item_paths = values
-
+        self.item_paths = json.loads(resp)
 
     def get_option(self, name, default):
         """Get an option from the request if available and fallback to the

@@ -162,7 +162,8 @@ class QueuedItemLoader(threading.Thread):
             return None
         try:
             item = json.loads(item_json)
-        except json.JSONDecodeError:
-            logger.error("Could not decode item from %s." % item_url)
+        except Exception as e:
+            logger.error("-------> Could not decode item from %s." % item_url)
+            logger.error(e)
             return None
         return item

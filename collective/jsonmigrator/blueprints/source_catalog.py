@@ -67,11 +67,12 @@ class CatalogSourceSection(object):
             f = urllib2.urlopen(req)
             resp = f.read()
         except urllib2.URLError:
+            logger.error("Please check if collective.jsonify, collective.jsonmigrator and 'get_item', 'get_children', 'get_catalog_results' external methods are installed in the remote server")
             raise
 
         # Bugfix
         # Rebuild folder and subfolder tree. Avoid obj creation in non existing folder > /site/folder does not exist for item /site/folder/file
-        # Order based on "/" count
+        # Order based on folders path lenght ("/" count)
         resp = ast.literal_eval(resp)
         resp = sorted(resp, key=lambda x:x.count('/'))
         resp = json.dumps(resp)

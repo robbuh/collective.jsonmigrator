@@ -16,6 +16,8 @@ try:
 except ImportError:
     import simplejson as json
 
+from plone import api
+
 
 class CatalogSourceSection(object):
 
@@ -44,47 +46,49 @@ class CatalogSourceSection(object):
         self.remote_skip_paths = self.get_option('remote_skip_paths','').split()
         self.queue_length = int(self.get_option('queue_size', '10'))
 
-
-        resp = self.get_catalog(self.remote_url, self.remote_username, self.remote_password, catalog_path, catalog_query)
-
-        # Bugfix
-        # Rebuild folder and subfolder tree.
-        # Avoid obj creation in non existing folder > /site/folder does not exist for item /site/folder/file
-        # Order based on folders path lenght ("/" count)
-        resp = ast.literal_eval(resp)
-        resp = sorted(resp, key=lambda x:x.count('/'))
-        resp = json.dumps(resp)
-
-        # Stop alphabetical oder
-        #self.item_paths = sorted(json.loads(resp))
-        self.item_paths = json.loads(resp)
-
-
-    def get_catalog(self, remote_url, remote_username, remote_password, catalog_path, catalog_query):
-
         # Install a basic auth handler
         auth_handler = urllib2.HTTPBasicAuthHandler()
         auth_handler.add_password(realm='Zope',
-                                  uri=remote_url,
-                                  user=remote_username,
-                                  passwd=remote_password)
+                                  uri=self.remote_url,
+                                  user=self.remote_username,
+                                  passwd=self.remote_password)
         opener = urllib2.build_opener(auth_handler)
         urllib2.install_opener(opener)
 
 
         req = urllib2.Request(
             '%s%s/get_catalog_results' %
-            (remote_url, catalog_path), urllib.urlencode(
+            (self.remote_url, catalog_path), urllib.urlencode(
                 {
                     'catalog_query': catalog_query}))
 
         try:
             f = urllib2.urlopen(req)
             resp = f.read()
-            return resp
         except urllib2.URLError:
             logger.error("Please check if collective.jsonify, collective.jsonmigrator and 'get_item', 'get_children', 'get_catalog_results' external methods are installed in the remote server")
             raise
+
+        # Get existing objects in site -------
+        portal_catalog = api.portal.get_tool('portal_catalog')
+        results = portal_catalog.searchResults()
+        # Just in case remote website id is different from website id where objects migrates
+        remote_portal = catalog_path.split('/')[1]
+        portal = api.portal.get().id
+        existing_path = [x.getPath().replace(portal, remote_portal) for x in results]
+
+        # Rebuild folder and subfolder tree.
+        # Avoid obj creation in non existing folder > /site/folder does not exist for item /site/folder/file
+        # Order based on folders path lenght ("/" count)
+        resp = ast.literal_eval(resp)
+        # Avoid to create already existing objects in website
+        resp = [x for x in resp if x not in existing_path]
+        resp = sorted(resp, key=lambda x:x.count('/'))
+        resp = json.dumps(resp)
+
+        # Stop alphabetical oder
+        #self.item_paths = sorted(json.loads(resp))
+        self.item_paths = json.loads(resp)
 
 
     def get_option(self, name, default):

@@ -67,6 +67,17 @@ class WorkflowHistory(object):
                 yield item
                 continue
 
+            # Add versions history in simple_publication_workflow
+            _history = item.get('_history')
+
+            if _history:
+                for x in _history:
+                    if x['comment']:
+                        item['_workflow_history']['simple_publication_workflow'].append({'action': x['comment'],
+                                                                                         'review_state': x['review_state'],
+                                                                                         'actor': x['principal'],
+                                                                                         'time': x['timestamp']
+                                                                                         })
 
             if (IBaseObject.providedBy(obj) or
                 (dexterity_available and IDexterityContent.providedBy(obj))):

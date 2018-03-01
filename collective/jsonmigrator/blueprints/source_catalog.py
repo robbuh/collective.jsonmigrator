@@ -159,7 +159,7 @@ class QueuedItemLoader(threading.Thread):
         return False
 
     def _load_path(self, path):
-        # Login in via get vars to get all object's attributes (e.g. "_history")
+        # login via URL to get all object's attributes in get_item method (e.g. "_history")
         item_url = '%s%s/get_item?__ac_name=%s&__ac_password=%s' % (self.remote_url, urllib.quote(path), self.remote_username, self.remote_password)
         try:
             f = urllib2.urlopen(item_url)

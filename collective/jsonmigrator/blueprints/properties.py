@@ -66,6 +66,12 @@ class Properties(object):
             if item['excludeFromNav']:
                 obj.exclude_from_nav = True
 
+            # Set last modification date from remote website object
+            _history = item.get('_history')
+
+            if _history:
+                last_modification_date = [x['timestamp'] for x in _history][0]
+                obj.setModificationDate(last_modification_date)
 
             for pid, pvalue, ptype in item[propertieskey]:
                 if getattr(aq_base(obj), pid, None) is not None:

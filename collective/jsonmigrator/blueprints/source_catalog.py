@@ -30,10 +30,9 @@ class CatalogSourceSection(object):
         self.options = options
         self.context = transmogrifier.context
 
-        self.remote_url = self.get_option('remote_url',
-                                          'http://localhost:8080')
-        remote_username = self.get_option('remote_username', 'admin')
-        remote_password = self.get_option('remote_password', 'admin')
+        self.remote_url = self.get_option('remote_url', 'http://localhost:8080')
+        self.remote_username = self.get_option('remote_username', 'admin')
+        self.remote_password = self.get_option('remote_password', 'admin')
 
         catalog_path = self.get_option('catalog_path', '/Plone/portal_catalog')
         self.site_path_length = len('/'.join(catalog_path.split('/')[:-1]))
@@ -42,36 +41,15 @@ class CatalogSourceSection(object):
         catalog_query = ' '.join(catalog_query.split())
         catalog_query = base64.b64encode(catalog_query)
 
-        self.remote_skip_paths = self.get_option('remote_skip_paths',
-                                                 '').split()
+        self.remote_skip_paths = self.get_option('remote_skip_paths','').split()
         self.queue_length = int(self.get_option('queue_size', '10'))
 
 
-        # Install a basic auth handler
-        auth_handler = urllib2.HTTPBasicAuthHandler()
-        auth_handler.add_password(realm='Zope',
-                                  uri=self.remote_url,
-                                  user=remote_username,
-                                  passwd=remote_password)
-        opener = urllib2.build_opener(auth_handler)
-        urllib2.install_opener(opener)
-
-
-        req = urllib2.Request(
-            '%s%s/get_catalog_results' %
-            (self.remote_url, catalog_path), urllib.urlencode(
-                {
-                    'catalog_query': catalog_query}))
-
-        try:
-            f = urllib2.urlopen(req)
-            resp = f.read()
-        except urllib2.URLError:
-            logger.error("Please check if collective.jsonify, collective.jsonmigrator and 'get_item', 'get_children', 'get_catalog_results' external methods are installed in the remote server")
-            raise
+        resp = self.get_catalog(self.remote_url, self.remote_username, self.remote_password, catalog_path, catalog_query)
 
         # Bugfix
-        # Rebuild folder and subfolder tree. Avoid obj creation in non existing folder > /site/folder does not exist for item /site/folder/file
+        # Rebuild folder and subfolder tree.
+        # Avoid obj creation in non existing folder > /site/folder does not exist for item /site/folder/file
         # Order based on folders path lenght ("/" count)
         resp = ast.literal_eval(resp)
         resp = sorted(resp, key=lambda x:x.count('/'))
@@ -80,6 +58,34 @@ class CatalogSourceSection(object):
         # Stop alphabetical oder
         #self.item_paths = sorted(json.loads(resp))
         self.item_paths = json.loads(resp)
+
+
+    def get_catalog(self, remote_url, remote_username, remote_password, catalog_path, catalog_query):
+
+        # Install a basic auth handler
+        auth_handler = urllib2.HTTPBasicAuthHandler()
+        auth_handler.add_password(realm='Zope',
+                                  uri=remote_url,
+                                  user=remote_username,
+                                  passwd=remote_password)
+        opener = urllib2.build_opener(auth_handler)
+        urllib2.install_opener(opener)
+
+
+        req = urllib2.Request(
+            '%s%s/get_catalog_results' %
+            (remote_url, catalog_path), urllib.urlencode(
+                {
+                    'catalog_query': catalog_query}))
+
+        try:
+            f = urllib2.urlopen(req)
+            resp = f.read()
+            return resp
+        except urllib2.URLError:
+            logger.error("Please check if collective.jsonify, collective.jsonmigrator and 'get_item', 'get_children', 'get_catalog_results' external methods are installed in the remote server")
+            raise
+
 
     def get_option(self, name, default):
         """Get an option from the request if available and fallback to the
@@ -99,7 +105,7 @@ class CatalogSourceSection(object):
         for item in self.previous:
             yield item
 
-        queue = QueuedItemLoader(self.remote_url, self.item_paths,
+        queue = QueuedItemLoader(self.remote_url, self.remote_username, self.remote_password, self.item_paths,
                                  self.remote_skip_paths, self.queue_length)
         queue.start()
 
@@ -113,10 +119,12 @@ class CatalogSourceSection(object):
 
 class QueuedItemLoader(threading.Thread):
 
-    def __init__(self, remote_url, paths, remote_skip_paths, queue_length):
+    def __init__(self, remote_url, remote_username, remote_password, paths, remote_skip_paths, queue_length):
         super(QueuedItemLoader, self).__init__()
 
         self.remote_url = remote_url
+        self.remote_username = remote_username
+        self.remote_password = remote_password
         self.paths = list(paths)
         self.remote_skip_paths = remote_skip_paths
         self.queue_length = queue_length
@@ -151,7 +159,8 @@ class QueuedItemLoader(threading.Thread):
         return False
 
     def _load_path(self, path):
-        item_url = '%s%s/get_item' % (self.remote_url, urllib.quote(path))
+        # Login in via get vars to get all object's attributes (e.g. "_history")
+        item_url = '%s%s/get_item?__ac_name=%s&__ac_password=%s' % (self.remote_url, urllib.quote(path), self.remote_username, self.remote_password)
         try:
             f = urllib2.urlopen(item_url)
             item_json = f.read()

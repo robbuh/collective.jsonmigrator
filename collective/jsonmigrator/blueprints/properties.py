@@ -58,7 +58,6 @@ class Properties(object):
                 yield item
                 continue
 
-
             if not getattr(aq_base(obj), '_setProperty', False):
                 yield item
                 continue

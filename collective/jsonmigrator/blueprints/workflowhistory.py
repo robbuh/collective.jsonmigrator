@@ -67,6 +67,7 @@ class WorkflowHistory(object):
                 yield item
                 continue
 
+
             if (IBaseObject.providedBy(obj) or
                 (dexterity_available and IDexterityContent.providedBy(obj))):
                 item_tmp = item
@@ -83,5 +84,6 @@ class WorkflowHistory(object):
                 workflows = self.wftool.getWorkflowsFor(obj)
                 if workflows:
                     workflows[0].updateRoleMappingsFor(obj)
+
 
             yield item

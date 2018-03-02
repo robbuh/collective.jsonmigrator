@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collective.jsonmigrator import logger
 from Acquisition import aq_base
 from Products.CMFPlone.utils import safe_unicode
 from collective.transmogrifier.interfaces import ISection
@@ -66,12 +67,19 @@ class Properties(object):
             if item['excludeFromNav']:
                 obj.exclude_from_nav = True
 
+
             # Set last modification date from remote website object
             _history = item.get('_history')
+            _workflow_history = item.get('_workflow_history')
+            simple_publication_workflow = _workflow_history.get('simple_publication_workflow')
 
             if _history:
-                last_modification_date = [x['timestamp'] for x in _history][0]
-                obj.setModificationDate(last_modification_date)
+                last_modification_date = sorted([x['timestamp'] for x in _history], reverse=True)[0]
+            elif simple_publication_workflow:
+                last_modification_date = sorted([x['time'] for x in simple_publication_workflow], reverse=True)[0]
+
+            obj.setModificationDate(last_modification_date)
+
 
             for pid, pvalue, ptype in item[propertieskey]:
                 if getattr(aq_base(obj), pid, None) is not None:

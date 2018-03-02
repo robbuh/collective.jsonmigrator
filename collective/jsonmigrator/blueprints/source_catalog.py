@@ -69,20 +69,19 @@ class CatalogSourceSection(object):
             logger.error("Please check if collective.jsonify, collective.jsonmigrator and 'get_item', 'get_children', 'get_catalog_results' external methods are installed in the remote server")
             raise
 
-        # Get existing objects in site -------
+        # Get existing objects in site
         portal_catalog = api.portal.get_tool('portal_catalog')
         results = portal_catalog.searchResults()
-        # Just in case remote website id is different from website id where objects migrates
+        # Just in case remote website ID is different from website ID
         remote_portal = catalog_path.split('/')[1]
         portal = api.portal.get().id
         existing_path = [x.getPath().replace(portal, remote_portal) for x in results]
 
-        # Rebuild folder and subfolder tree.
-        # Avoid obj creation in non existing folder > /site/folder does not exist for item /site/folder/file
-        # Order based on folders path lenght ("/" count)
+        # Rebuild folder and subfolder tree hierarchy (avoid object creation in non existing path)
         resp = ast.literal_eval(resp)
         # Avoid to create already existing objects in website
         resp = [x for x in resp if x not in existing_path]
+        # Sort by folders path length
         resp = sorted(resp, key=lambda x:x.count('/'))
         resp = json.dumps(resp)
 

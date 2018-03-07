@@ -67,6 +67,8 @@ class WorkflowHistory(object):
                 yield item
                 continue
 
+
+
             # Add versions history in simple_publication_workflow
             _history = item.get('_history')
 
@@ -79,9 +81,14 @@ class WorkflowHistory(object):
                                                                                          'time': x['timestamp']
                                                                                          })
 
+
             if (IBaseObject.providedBy(obj) or
                 (dexterity_available and IDexterityContent.providedBy(obj))):
                 item_tmp = item
+
+                # Order workflow by time action
+                for workflow in item_tmp[workflowhistorykey]:
+                    item_tmp[workflowhistorykey][workflow] = sorted(item['_workflow_history']['simple_publication_workflow'], key=lambda k: k['time'])
 
                 # get back datetime stamp and set the workflow history
                 for workflow in item_tmp[workflowhistorykey]:
@@ -89,6 +96,7 @@ class WorkflowHistory(object):
                         if 'time' in item_tmp[workflowhistorykey][workflow][k]:
                             item_tmp[workflowhistorykey][workflow][k]['time'] = DateTime(  # noqa
                                 item_tmp[workflowhistorykey][workflow][k]['time'])  # noqa
+
                 obj.workflow_history.data = item_tmp[workflowhistorykey]
 
                 # update security

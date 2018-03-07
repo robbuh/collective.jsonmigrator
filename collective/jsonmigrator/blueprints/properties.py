@@ -11,6 +11,8 @@ from ZODB.POSException import ConflictError
 from zope.interface import classProvides
 from zope.interface import implements
 
+from DateTime import DateTime
+
 
 class Properties(object):
 
@@ -67,28 +69,10 @@ class Properties(object):
             if item['excludeFromNav']:
                 obj.exclude_from_nav = True
 
-
-            # Set last modification date from remote website object
-            _history = item.get('_history')
-            _workflow_history = item.get('_workflow_history')
-            simple_publication_workflow = _workflow_history.get('simple_publication_workflow')
-
-            if _history:
-                last_modification_date = sorted([x['timestamp'] for x in _history], reverse=True)[0]
-            elif simple_publication_workflow:
-                last_modification_date = sorted([x['time'] for x in simple_publication_workflow], reverse=True)[0]
-
-            obj.setModificationDate(last_modification_date)
-
-
             for pid, pvalue, ptype in item[propertieskey]:
                 if getattr(aq_base(obj), pid, None) is not None:
                     # if object have a attribute equal to property, do nothing
                     continue
-
-                # Bugfix > plone default_page must be a string, got (<type 'unicode'>)
-                if pid == 'default_page':
-                    pvalue = str(pvalue)
 
                 try:
                     if obj.hasProperty(pid):
@@ -101,5 +85,7 @@ class Properties(object):
                     raise Exception('Failed to set property "%s" type "%s"'
                                     ' to "%s" at object %s. ERROR: %s' %
                                     (pid, ptype, pvalue, str(obj), str(e)))
+
+            logger.info("object creation %s" %(obj.absolute_url_path()))
 
             yield item

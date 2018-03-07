@@ -83,6 +83,7 @@ class CatalogSourceSection(object):
         resp = [x for x in resp if x not in existing_path]
         # Sort by folders path length
         resp = sorted(resp, key=lambda x:x.count('/'))
+
         resp = json.dumps(resp)
 
         # Stop alphabetical oder

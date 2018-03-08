@@ -68,35 +68,36 @@ class WorkflowHistory(object):
                 continue
 
 
-
-            # Add versions history in simple_publication_workflow
-            _history = item.get('_history')
-
-            if _history:
-                for x in _history:
-                    if x['comment']:
-                        item['_workflow_history']['simple_publication_workflow'].append({'action': x['comment'],
-                                                                                         'review_state': x['review_state'],
-                                                                                         'actor': x['principal'],
-                                                                                         'time': x['timestamp']
-                                                                                         })
-
-
             if (IBaseObject.providedBy(obj) or
                 (dexterity_available and IDexterityContent.providedBy(obj))):
                 item_tmp = item
 
-                # Order workflow by time action
-                for workflow in item_tmp[workflowhistorykey]:
-                    item_tmp[workflowhistorykey][workflow] = sorted(item['_workflow_history']['simple_publication_workflow'], key=lambda k: k['time'])
+
+
+                _history = item_tmp.get('_history')
 
                 # get back datetime stamp and set the workflow history
                 for workflow in item_tmp[workflowhistorykey]:
+
+                    # Add versions history in workflow
+                    if _history:
+                      for x in _history:
+                          if x['comment']:
+                              item_tmp[workflowhistorykey][workflow].append({'action': x['comment'],
+                                                                             'review_state': x['review_state'],
+                                                                             'actor': x['principal'],
+                                                                             'time': x['timestamp']
+                                                                             })
+
                     for k, workflow2 in enumerate(item_tmp[workflowhistorykey][workflow]):  # noqa
                         if 'time' in item_tmp[workflowhistorykey][workflow][k]:
                             item_tmp[workflowhistorykey][workflow][k]['time'] = DateTime(  # noqa
                                 item_tmp[workflowhistorykey][workflow][k]['time'])  # noqa
 
+                    # Order workflow by time (review_state issue)
+                    item_tmp[workflowhistorykey][workflow] = sorted(item[workflowhistorykey][workflow], key=lambda k: k['time'])
+
+                # Set workflow
                 obj.workflow_history.data = item_tmp[workflowhistorykey]
 
                 # update security

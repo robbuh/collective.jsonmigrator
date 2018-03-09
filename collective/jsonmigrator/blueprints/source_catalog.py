@@ -84,6 +84,9 @@ class CatalogSourceSection(object):
         # Sort by folders path length
         resp = sorted(resp, key=lambda x:x.count('/'))
 
+        if not resp:
+            logger.warning("Nothing to do. All objects are already created!")
+
         resp = json.dumps(resp)
 
         # Stop alphabetical oder

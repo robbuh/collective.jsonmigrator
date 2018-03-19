@@ -89,14 +89,14 @@ class WorkflowHistory(object):
                                                                              'time': x['timestamp']
                                                                              })
 
-                    # Order workflow by time
-                    item_tmp[workflowhistorykey][workflow] = sorted(item[workflowhistorykey][workflow], key=lambda k: k['time'])
 
                     for k, workflow2 in enumerate(item_tmp[workflowhistorykey][workflow]):  # noqa
                         if 'time' in item_tmp[workflowhistorykey][workflow][k]:
                             item_tmp[workflowhistorykey][workflow][k]['time'] = DateTime(  # noqa
                                 item_tmp[workflowhistorykey][workflow][k]['time'])  # noqa
 
+                    # Order workflow by time
+                    item_tmp[workflowhistorykey][workflow] = sorted(item[workflowhistorykey][workflow], key=lambda k: k['time'])
 
                 # Set workflow
                 obj.workflow_history.data = item_tmp[workflowhistorykey]

@@ -85,7 +85,7 @@ class CatalogSourceSection(object):
         resp = sorted(resp, key=lambda x:x.count('/'))
 
         if not resp:
-            logger.warning("Nothing to do. All objects are already created!")
+            logger.warning("Nothing to do. All objects are already migrated!")
 
         resp = json.dumps(resp)
 

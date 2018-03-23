@@ -72,13 +72,22 @@ class CatalogSourceSection(object):
         # Get existing objects in site
         portal_catalog = api.portal.get_tool('portal_catalog')
         results = portal_catalog.searchResults()
+
         # Just in case remote website ID is different from website ID
         remote_portal = catalog_path.split('/')[1]
         portal = api.portal.get().id
         existing_path = [x.getPath().replace(portal, remote_portal) for x in results]
 
-        # Rebuild folder and subfolder tree hierarchy (avoid object creation in non existing path)
+        # Rebuild folder and subfolder tree hierarchy
         resp = ast.literal_eval(resp)
+
+        # Delete folder path if Plone site is inside a Folder or a ZODB Mount Point
+        site_absolute_url_path = api.portal.get().absolute_url_path()
+        site_path = site_absolute_url_path.split('/')
+        if len(site_path) > 2:
+            container_folder = '/'+str(site_path[1])
+            existing_path = [x.replace(container_folder, '') for x in existing_path]
+
         # Avoid to create already existing objects in website
         resp = [x for x in resp if x not in existing_path]
         # Sort by folders path length

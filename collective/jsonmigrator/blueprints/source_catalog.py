@@ -11,6 +11,7 @@ import urllib
 import urllib2
 import ast
 
+
 try:
     import json
 except ImportError:
@@ -69,32 +70,41 @@ class CatalogSourceSection(object):
             logger.error("Please check if collective.jsonify, collective.jsonmigrator and 'get_item', 'get_children', 'get_catalog_results' external methods are installed in the remote server")
             raise
 
+        # Transform resp in list
+        resp = ast.literal_eval(resp)
+
         # Get existing objects in site
         portal_catalog = api.portal.get_tool('portal_catalog')
         results = portal_catalog.searchResults()
+        existing_path = [x.getPath() for x in results]
 
-        # Just in case remote website ID is different from website ID
-        remote_portal = catalog_path.split('/')[1]
-        portal = api.portal.get().id
-        existing_path = [x.getPath().replace(portal, remote_portal) for x in results]
+        # Normalize local and remote objects path to check already existing objects
+        # if root folder is different from remote root folder (/foder/Plone != /Plone) delete first folder in local existing_path.
+        # (probably local Plone site is inside a ZODB Mount Point)
+        local_path = api.portal.get().absolute_url_path().split('/')
+        remote_path = catalog_path.split('/')
 
-        # Rebuild folder and subfolder tree hierarchy
-        resp = ast.literal_eval(resp)
+        if local_path[1] != remote_path[1]:
+            # Delete first path folder if Plone local web site is inside a folder or ZODB Mount Point but not remote web site
+            if len(local_path) > 2:
+                # Delete first folder and add / at the beggining of the path
+                existing_path = ["/"+"/".join(x.strip("/").split('/')[1:]) for x in existing_path]
 
-        # Delete folder path if Plone site is inside a Folder or a ZODB Mount Point
-        site_absolute_url_path = api.portal.get().absolute_url_path()
-        site_path = site_absolute_url_path.split('/')
-        if len(site_path) > 2:
-            container_folder = '/'+str(site_path[1])
-            existing_path = [x.replace(container_folder, '') for x in existing_path]
+            # Just in case remote website ID is different from website ID
+            local_id = existing_path[0].split('/')[1]
+            remote_id = resp[0].split('/')[1]
 
-        # Avoid to create already existing objects in website
+            if local_id != remote_id:
+                # Replace local_id with remote_id
+                existing_path = ["/"+remote_id+"/"+"/".join(x.strip("/").split('/')[1:]) for x in existing_path]
+
+        # Avoid already existing objects creation
         resp = [x for x in resp if x not in existing_path]
-        # Sort by folders path length
+        # Rebuild folder and subfolder tree hierarchy sorting by folders path length
         resp = sorted(resp, key=lambda x:x.count('/'))
 
         if not resp:
-            logger.warning("Nothing to do. All objects are already migrated!")
+            logger.warning("*** Nothing to do. All objects are already migrated! ***")
 
         resp = json.dumps(resp)
 

@@ -81,14 +81,12 @@ class WorkflowHistory(object):
                     # Add versions history in workflow
                     if _history:
                       for x in _history:
-                          if x['comment']:
+                          if x['comment']: # Should "Initial revision" action be deleted in the _history workflow? Is it useful?
 
-                              # Convert _history date from GMT to GMT+1
-                              # sort workflow isues see below
-                              time = DateTime(x['timestamp']).strftime('%Y/%m/%d %H:%M:%S') # delete GMT declaration
-                              time = datetime.strptime(time, '%Y/%m/%d %H:%M:%S') # trasform date in datetime
-                              time = time - timedelta(hours=1) # decrease time (1 hour)
-                              time = DateTime(time) # convert date in DateTime again
+                              # Delete GMT declaration in _history to adjust _history GMT to migration GMT time of object
+                              # Added max of millisecond just in case creation object have the same date+hour+minute+second
+                              # History always begin after object creation but here we lack of millisecond data in _history workflow
+                              time = x['timestamp'][:19]+'.999999'
 
                               item_tmp[workflowhistorykey][workflow].append({'action': x['comment'],
                                                                              'review_state': x['review_state'],
@@ -105,6 +103,9 @@ class WorkflowHistory(object):
 
                     # Order workflow by time
                     item_tmp[workflowhistorykey][workflow] = sorted(item[workflowhistorykey][workflow], key=lambda k: k['time'])
+
+                import pdb
+                pdb.set_trace()
 
                 # Set workflow
                 obj.workflow_history.data = item_tmp[workflowhistorykey]

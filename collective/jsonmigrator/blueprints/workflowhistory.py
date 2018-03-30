@@ -6,7 +6,6 @@ from collective.transmogrifier.utils import defaultKeys
 from collective.transmogrifier.utils import Matcher
 from collective.transmogrifier.utils import traverse
 from DateTime import DateTime
-from datetime import datetime, timedelta
 from Products.Archetypes.interfaces import IBaseObject
 from Products.CMFCore.utils import getToolByName
 from zope.interface import classProvides
@@ -68,6 +67,7 @@ class WorkflowHistory(object):
                 yield item
                 continue
 
+
             if (IBaseObject.providedBy(obj) or
                 (dexterity_available and IDexterityContent.providedBy(obj))):
                 item_tmp = item
@@ -100,17 +100,17 @@ class WorkflowHistory(object):
                                 item_tmp[workflowhistorykey][workflow][k]['time'])  # noqa
 
 
+                    # Check if review_state is None, if so, take last valued review_sate il list
+                    item_tmp[workflowhistorykey][workflow] = sorted(item[workflowhistorykey][workflow], key=lambda k: k['time'], reverse=True)
+                    # search for last valued review_state
+                    last_review_state = [x['review_state'] for x in item_tmp[workflowhistorykey][workflow] if x['review_state']][0]
+                    for x in item_tmp[workflowhistorykey][workflow]:
+                        # set review_state
+                        if not x['review_state']:
+                            x['review_state'] = last_review_state
+
                     # Order workflow by time
                     item_tmp[workflowhistorykey][workflow] = sorted(item[workflowhistorykey][workflow], key=lambda k: k['time'])
-
-                    # Check if last action has a None review_state value, if so, take the second-to-last review_state value
-                    wf = item_tmp[workflowhistorykey][workflow]
-                    if wf[-1]['review_state'] is None:
-                        try:
-                            review_state = wf[-2]['review_state']
-                            item_tmp[workflowhistorykey][workflow][-1]['review_state'] = review_state
-                        except:
-                            pass
 
                 # Set workflow
                 obj.workflow_history.data = item_tmp[workflowhistorykey]

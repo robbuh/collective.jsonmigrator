@@ -68,7 +68,6 @@ class WorkflowHistory(object):
                 yield item
                 continue
 
-
             if (IBaseObject.providedBy(obj) or
                 (dexterity_available and IDexterityContent.providedBy(obj))):
                 item_tmp = item
@@ -104,8 +103,14 @@ class WorkflowHistory(object):
                     # Order workflow by time
                     item_tmp[workflowhistorykey][workflow] = sorted(item[workflowhistorykey][workflow], key=lambda k: k['time'])
 
-                import pdb
-                pdb.set_trace()
+                    # Check if last action has a None review_state value, if so, take the second-to-last review_state value
+                    wf = item_tmp[workflowhistorykey][workflow]
+                    if wf[-1]['review_state'] is None:
+                        try:
+                            review_state = wf[-2]['review_state']
+                            item_tmp[workflowhistorykey][workflow][-1]['review_state'] = review_state
+                        except:
+                            pass
 
                 # Set workflow
                 obj.workflow_history.data = item_tmp[workflowhistorykey]

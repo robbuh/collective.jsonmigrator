@@ -6,6 +6,7 @@ from collective.transmogrifier.utils import defaultKeys
 from collective.transmogrifier.utils import Matcher
 from collective.transmogrifier.utils import traverse
 from DateTime import DateTime
+from datetime import datetime, timedelta
 from Products.Archetypes.interfaces import IBaseObject
 from Products.CMFCore.utils import getToolByName
 from zope.interface import classProvides
@@ -72,21 +73,27 @@ class WorkflowHistory(object):
                 (dexterity_available and IDexterityContent.providedBy(obj))):
                 item_tmp = item
 
-
-
                 _history = item_tmp.get('_history')
 
-                # get back datetime stamp and set the workflow history
+                # get back datetimestamp and set the workflow history
                 for workflow in item_tmp[workflowhistorykey]:
 
                     # Add versions history in workflow
                     if _history:
                       for x in _history:
                           if x['comment']:
+
+                              # Convert _history date from GMT to GMT+1
+                              # sort workflow isues see below
+                              time = DateTime(x['timestamp']).strftime('%Y/%m/%d %H:%M:%S') # delete GMT declaration
+                              time = datetime.strptime(time, '%Y/%m/%d %H:%M:%S') # trasform date in datetime
+                              time = time - timedelta(hours=1) # decrease time (1 hour)
+                              time = DateTime(time) # convert date in DateTime again
+
                               item_tmp[workflowhistorykey][workflow].append({'action': x['comment'],
                                                                              'review_state': x['review_state'],
                                                                              'actor': x['principal'],
-                                                                             'time': x['timestamp']
+                                                                             'time': time,
                                                                              })
 
 
@@ -94,6 +101,7 @@ class WorkflowHistory(object):
                         if 'time' in item_tmp[workflowhistorykey][workflow][k]:
                             item_tmp[workflowhistorykey][workflow][k]['time'] = DateTime(  # noqa
                                 item_tmp[workflowhistorykey][workflow][k]['time'])  # noqa
+
 
                     # Order workflow by time
                     item_tmp[workflowhistorykey][workflow] = sorted(item[workflowhistorykey][workflow], key=lambda k: k['time'])

@@ -84,7 +84,7 @@ class CatalogSourceSection(object):
         local_path = api.portal.get().absolute_url_path().split('/')
         remote_path = catalog_path.split('/')
 
-        if local_path[1] != remote_path[1]:
+        if resp and local_path[1] != remote_path[1]:
             # Delete first path folder if Plone local web site is inside a folder or ZODB Mount Point but not remote web site
             if len(local_path) > 2:
                 # Delete first folder and add / at the beggining of the path

@@ -67,7 +67,7 @@ class CatalogSourceSection(object):
             f = urllib2.urlopen(req)
             resp = f.read()
         except urllib2.URLError:
-            logger.error("Please check if collective.jsonify, collective.jsonmigrator and 'get_item', 'get_children', 'get_catalog_results' external methods are installed in the remote server")
+            logger.error("Please check if collective.jsonify, collective.jsonmigrator are installed in the remote server and if 'get_item', 'get_children', 'get_catalog_results' external methods are created in remote Plone web site")
             raise
 
         # Transform resp in list

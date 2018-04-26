@@ -10,8 +10,12 @@ from collective.transmogrifier.utils import traverse
 from ZODB.POSException import ConflictError
 from zope.interface import classProvides
 from zope.interface import implements
+from dateutil import parser
+from datetime import timedelta
+import pytz
 
 from DateTime import DateTime
+
 
 
 class Properties(object):
@@ -55,7 +59,6 @@ class Properties(object):
             path = safe_unicode(item[pathkey].lstrip('/')).encode('ascii')
             obj = traverse(self.context, path, None)
 
-
             if obj is None:
                 # path doesn't exist
                 yield item
@@ -68,6 +71,25 @@ class Properties(object):
             # Bugfix > Set exclude_from_nav (Plone 5) if excludeFromNav (Plone 4) is True
             if item['excludeFromNav']:
                 obj.exclude_from_nav = True
+
+            # Bugfix > set start & end date in Event object Plone 4 > Plone 5
+            try:
+                start = item['startDate']
+                # get date timezone
+                tz = DateTime(start).timezone()[:-2]
+                # keep the same hour at the Event migration by subtracting hours
+                tz_hours = DateTime(start).timezone()[-1]
+
+                start = parser.parse(start).astimezone(pytz.timezone(tz)) + timedelta(hours=-int(tz_hours))
+                end = item['endDate']
+                end = parser.parse(end).astimezone(pytz.timezone(tz)) + timedelta(hours=-int(tz_hours))
+
+                if start and end:
+                    obj.start = start
+                    obj.end = end
+            except:
+                pass
+
 
             for pid, pvalue, ptype in item[propertieskey]:
                 if getattr(aq_base(obj), pid, None) is not None:

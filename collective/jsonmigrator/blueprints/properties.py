@@ -10,10 +10,10 @@ from collective.transmogrifier.utils import traverse
 from ZODB.POSException import ConflictError
 from zope.interface import classProvides
 from zope.interface import implements
+import pytz
+import time
 from dateutil import parser
 from datetime import timedelta
-import pytz
-
 from DateTime import DateTime
 
 
@@ -73,17 +73,12 @@ class Properties(object):
                 obj.exclude_from_nav = True
 
             # Bugfix > set start & end date in Event object Plone 4 > Plone 5
+            # Convert all datetime timezone in UTC+0 to avoid hours change
             try:
                 start = item['startDate']
-                # get date timezone
-                tz = DateTime(start).timezone()[:-2]
-                # keep the same hour at the Event migration by subtracting hours
-                tz_hours = DateTime(start).timezone()[-1]
-
-                start = parser.parse(start).astimezone(pytz.timezone(tz)) + timedelta(hours=-int(tz_hours))
+                start = parser.parse(start).replace(tzinfo=pytz.timezone('UTC'))
                 end = item['endDate']
-                end = parser.parse(end).astimezone(pytz.timezone(tz)) + timedelta(hours=-int(tz_hours))
-
+                end = parser.parse(end).replace(tzinfo=pytz.timezone('UTC'))
                 if start and end:
                     obj.start = start
                     obj.end = end

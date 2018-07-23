@@ -69,8 +69,11 @@ class Properties(object):
                 continue
 
             # Bugfix > Set exclude_from_nav (Plone 5) if excludeFromNav (Plone 4) is True
-            if item['excludeFromNav']:
-                obj.exclude_from_nav = True
+            try:
+              if item['excludeFromNav']:
+                  obj.exclude_from_nav = True
+            except:
+              pass
 
             # Bugfix > set start & end date in Event object Plone 4 > Plone 5
             # Convert all datetime timezone in UTC+0 to avoid hours change

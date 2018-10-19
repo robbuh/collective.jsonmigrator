@@ -88,6 +88,11 @@ class Properties(object):
             except:
                 pass
 
+            # Bugfix > Convert Lineage sub site Folder in subsite Dexterity object
+            # Need to create a new Dexterity object call Sub Site (sub_site)
+            if item['_type'] == 'Folder':
+                if 'collective.lineage.interfaces.IChildSite' in item['_directly_provided']:
+                    obj.portal_type = 'sub_site'
 
             for pid, pvalue, ptype in item[propertieskey]:
                 if getattr(aq_base(obj), pid, None) is not None:

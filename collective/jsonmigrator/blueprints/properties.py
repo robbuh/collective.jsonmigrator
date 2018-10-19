@@ -90,9 +90,18 @@ class Properties(object):
 
             # Bugfix > Convert Lineage sub site Folder in subsite Dexterity object
             # Need to create a new Dexterity object call Sub Site (sub_site)
+            portal_types = self.context.portal_types.listContentTypes()
             if item['_type'] == 'Folder':
                 if 'collective.lineage.interfaces.IChildSite' in item['_directly_provided']:
-                    obj.portal_type = 'sub_site'
+
+                    dxt_obj_id = 'sub_site'
+
+                    if dxt_obj_id in portal_types:
+                        obj.portal_type = dxt_obj_id
+                    else:
+                        logger.error("Enable to import a Lineage child site. Please add a new Dexterity Folder type with id 'sub_site' and select 1. Folder Addable Constrains 2. Layout support 3. Navigation root in Behavior tab ")
+                        raise
+
 
             for pid, pvalue, ptype in item[propertieskey]:
                 if getattr(aq_base(obj), pid, None) is not None:

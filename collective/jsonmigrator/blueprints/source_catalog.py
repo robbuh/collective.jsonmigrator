@@ -56,7 +56,6 @@ class CatalogSourceSection(object):
         opener = urllib2.build_opener(auth_handler)
         urllib2.install_opener(opener)
 
-
         req = urllib2.Request(
             '%s%s/get_catalog_results' %
             (self.remote_url, catalog_path), urllib.urlencode(
@@ -85,7 +84,7 @@ class CatalogSourceSection(object):
         remote_path = catalog_path.split('/')
 
         if resp and local_path[1] != remote_path[1]:
-            # Delete first path folder if Plone local web site is inside a folder or ZODB Mount Point but not remote web site
+            # Delete first path folder if Plone LOCAL web site is inside a folder or ZODB Mount Point and REMOTE web site is not
             if len(local_path) > 2:
                 # Delete first folder and add / at the beggining of the path
                 existing_path = ["/"+"/".join(x.strip("/").split('/')[1:]) for x in existing_path]

@@ -49,6 +49,7 @@ class WorkflowHistory(object):
                 'workflow_history')
         self.workflowhistorykey = Matcher(*workflowhistorykeys)
 
+
     def __iter__(self):
         for item in self.previous:
             pathkey = self.pathkey(*item.keys())[0]
@@ -66,7 +67,6 @@ class WorkflowHistory(object):
             if obj is None or not getattr(obj, 'workflow_history', False):
                 yield item
                 continue
-
 
             if (IBaseObject.providedBy(obj) or
                 (dexterity_available and IDexterityContent.providedBy(obj))):

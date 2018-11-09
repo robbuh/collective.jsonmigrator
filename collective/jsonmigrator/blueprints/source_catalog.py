@@ -72,33 +72,42 @@ class CatalogSourceSection(object):
         # Transform resp in list
         resp = ast.literal_eval(resp)
 
+        # Normalize local and remote objects path to check already existing objects
         # Get existing objects in site
         portal_catalog = api.portal.get_tool('portal_catalog')
         results = portal_catalog.searchResults()
-        existing_path = [x.getPath() for x in results]
+        local_path = api.portal.get().absolute_url_path()
 
-        # Normalize local and remote objects path to check already existing objects
-        # if root folder is different from remote root folder (/foder/Plone != /Plone) delete first folder in local existing_path.
-        # (probably local Plone site is inside a ZODB Mount Point)
-        local_path = api.portal.get().absolute_url_path().split('/')
+        existing_path = [x.getPath() for x in results if local_path in x.getPath()]
+
+        local_path = local_path.split('/')
         remote_path = catalog_path.split('/')
 
+        # if root folder is different from remote root folder (/foder/Plone != /Plone) delete first folder in local existing_path.
+        # (probably local Plone site is inside a ZODB Mount Point)
         if resp and local_path[1] != remote_path[1]:
             # Delete first path folder if Plone LOCAL web site is inside a folder or ZODB Mount Point and REMOTE web site is not
             if len(local_path) > 2:
                 # Delete first folder and add / at the beggining of the path
                 existing_path = ["/"+"/".join(x.strip("/").split('/')[1:]) for x in existing_path]
 
-            # Just in case remote website ID is different from website ID
-            local_id = existing_path[0].split('/')[1]
-            remote_id = resp[0].split('/')[1]
+        # Just in case remote website ID is different from website ID
+        site_id_position = len(local_path)-1
+        local_id = existing_path[0].split('/')[site_id_position]
+        remote_id = resp[0].split('/')[site_id_position]
 
-            if local_id != remote_id:
-                # Replace local_id with remote_id
-                existing_path = ["/"+remote_id+"/"+"/".join(x.strip("/").split('/')[1:]) for x in existing_path]
+        if local_id != remote_id:
+            existing_path = [x.split('/') for x in existing_path]
+
+            # Replace local_id with remote_id
+            for x in existing_path:
+                x[site_id_position] = remote_id
+
+            existing_path = ['/'.join(x) for x in existing_path]
 
         # Avoid already existing objects creation
         resp = [x for x in resp if x not in existing_path]
+
         # Rebuild folder and subfolder tree hierarchy sorting by folders path length
         resp = sorted(resp, key=lambda x:x.count('/'))
 

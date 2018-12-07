@@ -88,6 +88,18 @@ class Properties(object):
             except:
                 pass
 
+            # Bugfix > effective_date and expiration_date field. If keys doesn't exists (e.g. effective_date in Plone 4)
+            # or if var is in CamelCase (e.g. expirationDate in Plone 4)
+            keys = item.keys()
+            if not 'effective_date' in keys or not 'effectiveDate' in keys:
+                obj.effective_date = item['creation_date']
+
+            if 'effectiveDate' in keys:
+                obj.effective_date = item['effectiveDate']
+
+            if 'expirationDate' in keys:
+                obj.expiration_date = item['expirationDate']
+
             # Bugfix > Convert Lineage child site in Subsite Dexterity object
             # Need to create a new Dexterity object called - Sub Site (subsite)
             portal_types = self.context.portal_types.listContentTypes()
@@ -101,7 +113,6 @@ class Properties(object):
                     else:
                         logger.error("Unable to import a Lineage child site. Please add a new Dexterity Folder type with id 'subsite' and select 1. Folder Addable Constrains 2. Layout support 3. Navigation root in Behavior tab ")
                         raise
-
 
             for pid, pvalue, ptype in item[propertieskey]:
                 if getattr(aq_base(obj), pid, None) is not None:

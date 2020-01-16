@@ -91,14 +91,22 @@ class Properties(object):
             # Bugfix > effective_date and expiration_date field. If keys doesn't exists (e.g. effective_date in Plone 4)
             # or if var is in CamelCase (e.g. expirationDate in Plone 4)
             keys = item.keys()
-            if not 'effective_date' in keys or not 'effectiveDate' in keys:
-                obj.effective_date = item['creation_date']
+            if not 'effective_date' in keys and not 'effectiveDate' in keys:
+                obj.effective_date = DateTime(item['creation_date'])
 
             if 'effectiveDate' in keys:
-                obj.effective_date = item['effectiveDate']
+                # Bugfix > Convert string (<type 'unicode'>) in DateTime object
+                effective_date = item['effectiveDate']
+                if effective_date:
+                    effective_date = DateTime(effective_date)
+                obj.effective_date = effective_date
 
             if 'expirationDate' in keys:
-                obj.expiration_date = item['expirationDate']
+                # Bugfix > Convert string (<type 'unicode'>) in DateTime object
+                expiration_date = item['expirationDate']
+                if expiration_date:
+                    expiration_date = DateTime(expiration_date)
+                obj.expiration_date = expiration_date
 
             # Bugfix > Convert Lineage child site in Subsite Dexterity object
             # Need to create a new Dexterity object called - Sub Site (subsite)
